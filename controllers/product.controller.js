@@ -6,7 +6,13 @@ productController.createProduct = async (req, res) => {
     try {
         const { sku, name, image, category, description, price, stock, brand, salePrice } = req.body;
 
-        const newProduct = new Product({sku, name, image, category, description, price, stock, brand, salePrice});
+        let saleRate = 0;
+
+        if(salePrice) {
+            saleRate = Number(((price - salePrice) / price) * 100).toFixed(1);
+        }
+
+        const newProduct = new Product({sku, name, image, category, description, price, stock, brand, salePrice, saleRate});
 
         await newProduct.save();
 
@@ -18,8 +24,20 @@ productController.createProduct = async (req, res) => {
 
 productController.getProducts = async (req, res) => {
     try {
+        const {mainCate, subCate, subCate2} = req.params;
         const {page, name, limit, sort} = req.query;
         const cond = name ? {name: {$regex: name, $options: "i"}} : {};
+
+        if(mainCate) {
+            cond.category = { $in: [mainCate] };
+            if(subCate) {
+                cond.category = { $in: [subCate] };
+                if(subCate2) {
+                    cond.category = { $in: [subCate2] };
+                }
+            }
+        }
+
         let query = Product.find(cond);
         let response = {status: "ok"};
         
@@ -30,6 +48,10 @@ productController.getProducts = async (req, res) => {
                 query = query.sort({price: -1});
             } else if(sort === "lowPrice") {
                 query = query.sort({price: 1});
+            } else if(sort === "highSale") {
+                query = query.sort({saleRate: -1});
+            } else if(sort === "lowSale") {
+                query = query.sort({saleRate: 1});
             }
 
             const total = await Product.find(cond).countDocuments();
@@ -53,14 +75,20 @@ productController.getProducts = async (req, res) => {
 productController.updateProduct = async (req, res) => {
     try {
         const {id} = req.params;
-        const {sku, name, image, category, description, price, stock, brand} = req.body;
+        const {sku, name, image, category, description, price, stock, brand, salePrice} = req.body;
+
+        let saleRate = 0;
+
+        if(salePrice) {
+            saleRate = Number(((price - salePrice) / price) * 100).toFixed(1);
+        }
 
         const product = await Product.findByIdAndUpdate(
             {
                 _id: id
             },
             {
-                sku, name, image, category, description, price, stock, brand
+                sku, name, image, category, description, price, stock, brand, salePrice, saleRate
             },
             {
                 new: true

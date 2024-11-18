@@ -8,6 +8,18 @@ router.get("/",
     productController.getProducts
 );
 
+router.get("/category/:mainCate", 
+    productController.getProducts
+);
+
+router.get("/category/:mainCate/:subCate", 
+    productController.getProducts
+);
+
+router.get("/category/:mainCate/:subCate/:subCate2", 
+    productController.getProducts
+);
+
 router.post("/", 
     authController.authenticate,
     authController.checkAdminPermission,
