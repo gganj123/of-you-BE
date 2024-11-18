@@ -4,9 +4,9 @@ const productController = {};
 
 productController.createProduct = async (req, res) => {
     try {
-        const { sku, name, image, category, description, price, stock, brand } = req.body;
+        const { sku, name, image, category, description, price, stock, brand, salePrice } = req.body;
 
-        const newProduct = new Product({sku, name, image, category, description, price, stock, brand});
+        const newProduct = new Product({sku, name, image, category, description, price, stock, brand, salePrice});
 
         await newProduct.save();
 
@@ -18,13 +18,19 @@ productController.createProduct = async (req, res) => {
 
 productController.getProducts = async (req, res) => {
     try {
-        const {page, name, limit} = req.query;
+        const {page, name, limit, sort} = req.query;
         const cond = name ? {name: {$regex: name, $options: "i"}} : {};
         let query = Product.find(cond);
         let response = {status: "ok"};
         
         if(page) {
             query = query.skip((page - 1) * limit).limit(limit);
+
+            if(sort === "highPrice") {
+                query = query.sort({price: -1});
+            } else if(sort === "lowPrice") {
+                query = query.sort({price: 1});
+            }
 
             const total = await Product.find(cond).countDocuments();
             const totalPages = Math.ceil(total / limit);
