@@ -125,7 +125,7 @@ authController.handleKakaoCallback = async (req, res) => {
     const payload = {
       grant_type: "authorization_code",
       client_id: KAKAO_CLIENT_ID,
-      redirect_uri: "http://localhost:5001/api/auth/kakao/callback",
+      redirect_uri: KAKAO_REDIRECT_URI,
       code,
     };
     console.log("요청 데이터:", payload);
