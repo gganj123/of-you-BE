@@ -111,17 +111,20 @@ cartController.deleteCartItem = async (req, res) => {
 
 cartController.updateCartItem = async (req, res) => {
     try {
-        const {itemId} = req.params;
         const {userId} = req;
-        const {qty} = req.body;
+        const {productId, size, qty} = req.body;
 
         const cart = await Cart.findOne({userId});
-        cart.items = cart.items.map(item => item._id.equals(itemId) ? {...item, qty} : item);
+        cart.items = cart.items.map(item =>{
+            console.log(item);
+            return item.productId.equals(productId) ? {...item, qty, size} : item
+        });
         await cart.save();
 
         res.status(200).json({
             status: "success",
-            message: "Item updated"
+            message: "Item updated",
+            cart
         });
     } catch (err) {
         res.status(400).json({

@@ -23,7 +23,7 @@ router.delete("/:itemId",
     cartController.deleteCartItem
 );
 
-router.put("/:itemId", 
+router.put("/", 
     authController.authenticate, 
     cartController.updateCartItem
 );
