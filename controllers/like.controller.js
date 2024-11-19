@@ -32,7 +32,7 @@ likeController.toggleLike = async (req, res) => {
 likeController.getLikeList = async (req, res) => {
   try {
     const { userId } = req;
-    const likeList = await Like.find({ userId });
+    const likeList = await Like.find({ userId }).populate("productId");
     return res.status(200).json({
       status: "success",
       data: likeList,
