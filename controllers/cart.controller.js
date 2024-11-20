@@ -5,7 +5,7 @@ const cartController = {};
 cartController.createCart = async (req, res) => {
     try {
         const {userId} = req;
-        const { productId, size, qty } = req.body;
+        const { cartItems } = req.body;
 
         let cart = await Cart.findOne({
             "userId": userId
@@ -16,16 +16,37 @@ cartController.createCart = async (req, res) => {
             await cart.save();
         }
         
-        const cartItem = cart.items.find(
-            (item) => item.productId.equals(productId) && item.size === size
-        );
+        let falseCount = 0;
+        const falseItems = [];
+        const cartList = [];
 
-        if(cartItem) {
-            throw new Error("Item already exists");
+        cartItems.forEach(async (item) => {
+            const cartItem = cart.items.find(
+                (cartItem) => cartItem.productId.equals(item.productId) && cartItem.size === item.size
+            );
+
+            if(cartItem) {
+                falseCount++;
+                falseItems.push(item.productId);
+            }else{
+                cart.items = [...cart.items, {productId: item.productId, size: item.size, qty: item.qty}];
+                
+                cartList.push(cart);
+            }
+            
+        });
+
+        if(falseCount > 0) {
+            res.status(200).json({
+                status: "fail",
+                message: "Item already exists",
+                falseItems
+            });
+        }else{
+            for (const cart of cartList) {
+                await cart.save();
+            }
         }
-        cart.items = [...cart.items, {productId, size, qty}];
-
-        await cart.save();
 
         res.status(200).json({
             status: "success",
@@ -115,10 +136,9 @@ cartController.updateCartItem = async (req, res) => {
         const {productId, size, qty} = req.body;
 
         const cart = await Cart.findOne({userId});
-        cart.items = cart.items.map(item =>{
-            console.log(item);
-            return item.productId.equals(productId) ? {...item, qty, size} : item
-        });
+        cart.items = cart.items.map(item =>
+            item.productId.equals(productId) ? {...item, qty, size} : item
+        );
         await cart.save();
 
         res.status(200).json({
