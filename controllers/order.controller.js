@@ -49,12 +49,12 @@ orderController.getOrders = async (req, res) => {
     const { page, limit, sort } = req.query;
     const { userId } = req;
 
-    let searchOrders = await Order.find({ userId });
+    let searchOrders = Order.find({ userId });
 
     if (page) {
       searchOrders = searchOrders.skip((page - 1) * limit).limit(limit);
 
-      const total = await Order.find({ userId }).countDocuments();
+      const total = Order.find({ userId }).countDocuments();
       const totalPages = Math.ceil(total / limit);
 
       response.totalCount = total;
