@@ -3,63 +3,66 @@ const Cart = require("../models/Cart");
 const cartController = {};
 
 cartController.createCart = async (req, res) => {
-    try {
-        const {userId} = req;
-        const { cartItems } = req.body;
+  try {
+    const { userId } = req;
+    const { cartItems } = req.body;
 
-        let cart = await Cart.findOne({
-            "userId": userId
-        });
+    // 사용자 장바구니 가져오기
+    let cart = await Cart.findOne({ userId });
 
-        if(!cart) {
-            cart = new Cart({userId});
-            await cart.save();
-        }
-        
-        let falseCount = 0;
-        const falseItems = [];
-        const cartList = [];
-
-        cartItems.forEach(async (item) => {
-            const cartItem = cart.items.find(
-                (cartItem) => cartItem.productId.equals(item.productId) && cartItem.size === item.size
-            );
-
-            if(cartItem) {
-                falseCount++;
-                falseItems.push(item.productId);
-            }else{
-                cart.items = [...cart.items, {productId: item.productId, size: item.size, qty: item.qty}];
-                
-                cartList.push(cart);
-            }
-            
-        });
-
-        if(falseCount > 0) {
-            res.status(200).json({
-                status: "fail",
-                message: "Item already exists",
-                falseItems
-            });
-        }else{
-            for (const cart of cartList) {
-                await cart.save();
-            }
-        }
-
-        res.status(200).json({
-            status: "success",
-            cart,
-            cartItemQty: cart.items.length
-        });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message
-        });
+    if (!cart) {
+      cart = new Cart({ userId, items: [] });
     }
-}
+
+    const falseItems = []; // 중복된 상품
+    const newItems = []; // 추가할 새로운 상품
+
+    // cartItems 처리
+    for (const item of cartItems) {
+      const cartItemId = `${item.productId}_${item.size}`; // 고유 cartItemId 생성
+
+      const isDuplicate = cart.items.some(
+        (cartItem) => cartItem.cartItemId === cartItemId
+      );
+
+      if (isDuplicate) {
+        falseItems.push(item.productId); // 중복된 상품 저장
+      } else {
+        newItems.push({
+          ...item,
+          cartItemId, // 고유 cartItemId 추가
+        });
+      }
+    }
+
+    // 중복된 상품이 있는 경우 바로 응답
+    if (falseItems.length > 0) {
+      return res.status(200).json({
+        status: "fail",
+        message: "Some items already exist in the cart.",
+        falseItems,
+      });
+    }
+
+    // 새로운 상품 추가
+    cart.items.push(...newItems);
+    await cart.save();
+
+    // 성공 응답
+    res.status(200).json({
+      status: "success",
+      message: "Cart updated successfully.",
+      cart,
+      cartItemQty: cart.items.length,
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "fail",
+      message: err.message,
+    });
+  }
+};
+
 
 cartController.getCart = async (req, res) => {
     try {
