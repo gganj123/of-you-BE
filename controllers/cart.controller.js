@@ -140,7 +140,7 @@ cartController.updateCartItem = async (req, res) => {
 
         const cart = await Cart.findOne({userId});
         cart.items = cart.items.map(item =>
-            item.productId.equals(productId) ? {...item, qty, size} : item
+          item.cartItemId === `${productId}_${size}` ? {...item, qty} : item
         );
         await cart.save();
 
