@@ -66,28 +66,55 @@ cartController.createCart = async (req, res) => {
 
 cartController.getCart = async (req, res) => {
     try {
-        const {userId} = req;
+        const { userId } = req;
 
-        // populate = 참조하는 모델의 데이터를 가져오는 것
-        const cart = await Cart.findOne({userId}).populate({
-            path:"items",
-            populate:{
-                path:"productId",
-                model:"Product",
-            }
+        // 사용자 카트와 연관된 제품 데이터 가져오기
+        const cart = await Cart.findOne({ userId }).populate({
+            path: "items.productId", // items 안에 있는 productId 참조
+            model: "Product",
         });
+
+        if (!cart) {
+            return res.status(404).json({
+                status: "fail",
+                message: "Cart not found",
+            });
+        }
+
+        // 필요한 데이터만 정제
+        const cartItems = cart.items.map((item) => ({
+            productId: {
+                _id: item.productId._id,
+                sku: item.productId.sku,
+                name: item.productId.name,
+                image: item.productId.image,
+                category: item.productId.category,
+                price: item.productId.price,
+                salePrice: item.productId.salePrice,
+                realPrice: item.productId.realPrice,
+                saleRate: item.productId.saleRate,
+                stock: item.productId.stock,
+                brand: item.productId.brand,
+                status: item.productId.status,
+                isDeleted: item.productId.isDeleted,
+                createdAt: item.productId.createdAt,
+            },
+            size: item.size,
+            qty: item.qty,
+            _id: item._id, // MongoDB에서 생성된 고유 ID
+        }));
 
         res.status(200).json({
             status: "success",
-            data: cart.items
+            data: cartItems,
         });
     } catch (err) {
         res.status(400).json({
             status: "fail",
-            message: err.message
+            message: err.message,
         });
     }
-}
+};
 
 cartController.getCartCount = async (req, res) => {
     try {
