@@ -7,35 +7,33 @@ cartController.createCart = async (req, res) => {
     const { userId } = req;
     const { cartItems } = req.body;
 
-    // 사용자 장바구니 가져오기
     let cart = await Cart.findOne({ userId });
 
     if (!cart) {
       cart = new Cart({ userId, items: [] });
     }
 
-    const falseItems = []; // 중복된 상품
-    const newItems = []; // 추가할 새로운 상품
+    const falseItems = []; 
+    const newItems = []; 
 
-    // cartItems 처리
+
     for (const item of cartItems) {
-      const cartItemId = `${item.productId}_${item.size}`; // 고유 cartItemId 생성
+      const cartItemId = `${item.productId}_${item.size}`;
 
       const isDuplicate = cart.items.some(
         (cartItem) => cartItem.cartItemId === cartItemId
       );
 
       if (isDuplicate) {
-        falseItems.push(item.productId); // 중복된 상품 저장
+        falseItems.push(item.productId); 
       } else {
         newItems.push({
           ...item,
-          cartItemId, // 고유 cartItemId 추가
+          cartItemId,
         });
       }
     }
 
-    // 중복된 상품이 있는 경우 바로 응답
     if (falseItems.length > 0) {
       return res.status(200).json({
         status: "fail",
@@ -44,11 +42,9 @@ cartController.createCart = async (req, res) => {
       });
     }
 
-    // 새로운 상품 추가
     cart.items.push(...newItems);
     await cart.save();
 
-    // 성공 응답
     res.status(200).json({
       status: "success",
       message: "Cart updated successfully.",
@@ -68,7 +64,6 @@ cartController.getCart = async (req, res) => {
     try {
         const { userId } = req;
 
-        // 사용자 카트와 연관된 제품 데이터 가져오기
         const cart = await Cart.findOne({ userId }).populate({
             path: "items.productId", // items 안에 있는 productId 참조
             model: "Product",
@@ -81,7 +76,6 @@ cartController.getCart = async (req, res) => {
             });
         }
 
-        // 필요한 데이터만 정제
         const cartItems = cart.items.map((item) => ({
             productId: {
                 _id: item.productId._id,
@@ -101,7 +95,7 @@ cartController.getCart = async (req, res) => {
             },
             size: item.size,
             qty: item.qty,
-            _id: item._id, // MongoDB에서 생성된 고유 ID
+            _id: item._id, 
         }));
 
         res.status(200).json({
@@ -162,20 +156,19 @@ cartController.deleteCartItem = async (req, res) => {
 
 cartController.updateCartItem = async (req, res) => {
   try {
-    const { cartItemId, size, qty } = req.body; // 요청 데이터에서 필요한 필드만 사용
+    const { cartItemId, size, qty } = req.body;
     const { userId } = req;
 
     const cart = await Cart.findOne({ userId });
 
-    const item = cart.items.find((item) => item._id.equals(cartItemId)); // `_id`로 찾기
+    const item = cart.items.find((item) => item._id.equals(cartItemId)); 
 
     if (!item) {
       return res.status(404).json({ message: 'Cart item not found.' });
     }
 
-    // 요청 데이터에 따라 업데이트
-    if (size) item.size = size; // 옵션 변경
-    if (qty) item.qty = qty; // 수량 변경
+    if (size) item.size = size; 
+    if (qty) item.qty = qty;
 
     await cart.save();
 
