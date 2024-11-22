@@ -43,58 +43,95 @@ productController.createProduct = async (req, res) => {
 productController.getProducts = async (req, res) => {
   try {
     const { mainCate, subCate, subCate2 } = req.params;
-    const { page = 1, name, limit = 10, sort } = req.query;
-
-    const decodedMainCate = decodeURIComponent(mainCate);
-    const decodedSubCate = subCate ? decodeURIComponent(subCate) : null;
-    const decodedSubCate2 = subCate2 ? decodeURIComponent(subCate2) : null;
-
-    console.log('Received request with:', {
-      mainCate: decodedMainCate,
-      subCate: decodedSubCate,
-      subCate2: decodedSubCate2,
-      page,
-      name,
-      limit,
-      sort,
-    });
+    const { page, name, limit, sort } = req.query;
 
     const cond = {};
 
     if (name) {
+      // 띄어쓰기로 단어를 분리하고 빈 문자열 제거
       const keywords = name.split(" ").filter((word) => word.length > 0);
-      cond.$or = keywords.map((keyword) => ({
-        name: { $regex: keyword, $options: "i" },
-      }));
+
+      if (keywords.length > 1) {
+        // 여러 단어가 있는 경우 AND 검색
+        cond.$and = keywords.map((keyword) => {
+          let searchTerms = [keyword];
+
+          // 남성/남자, 여성/여자 동의어 처리
+          if (keyword === "남자") searchTerms.push("남성");
+          if (keyword === "여자") searchTerms.push("여성");
+          if (keyword === "바지") searchTerms.push("팬츠");
+
+          return {
+            $or: searchTerms.flatMap((term) => [
+              { name: { $regex: term, $options: "i" } },
+              { category: { $regex: term, $options: "i" } },
+            ]),
+          };
+        });
+      } else {
+        // 단일 단어인 경우 OR 검색
+        let searchTerms = [keywords[0]];
+
+        // 남성/남자, 여성/여자 동의어 처리
+        if (keywords[0] === "남자") searchTerms.push("남성");
+        if (keywords[0] === "여자") searchTerms.push("여성");
+        if (keywords[0] === "바지") searchTerms.push("팬츠");
+
+        cond.$or = searchTerms.flatMap((term) => [
+          { name: { $regex: term, $options: "i" } },
+          { category: { $regex: term, $options: "i" } },
+        ]);
+      }
     }
 
-    if (decodedMainCate) {
-      cond.category = { $all: [decodedMainCate] };
-      if (decodedSubCate) cond.category.$all.push(decodedSubCate);
-      if (decodedSubCate2) cond.category.$all.push(decodedSubCate2);
+    if (mainCate) {
+      cond.category = { $all: [mainCate] };
+      if (subCate) {
+        cond.category = { $all: [mainCate, subCate] };
+        if (subCate2) {
+          cond.category = { $all: [mainCate, subCate, subCate2] };
+        }
+      }
     }
 
-    let query = Product.find(cond).skip((page - 1) * limit).limit(limit);
+    let query = Product.find(cond);
+    let response = { status: "ok" };
 
-    if (sort === "highPrice") query = query.sort({ realPrice: -1 });
-    if (sort === "lowPrice") query = query.sort({ realPrice: 1 });
-    if (sort === "latest") query = query.sort({ createdAt: -1 });
+    if (page) {
+      query = query.skip((page - 1) * limit).limit(limit);
+
+      if (sort === "highPrice") {
+        query = query.sort({ realPrice: -1 });
+      } else if (sort === "lowPrice") {
+        query = query.sort({ realPrice: 1 });
+      } else if (sort === "highSale") {
+        query = query.sort({ saleRate: -1 });
+      } else if (sort === "lowSale") {
+        query = query.sort({ saleRate: 1 });
+      } else if (sort === "latest") {
+        query = query.sort({ createdAt: -1 });
+      } else if (sort === "oldest") {
+        query = query.sort({ createdAt: 1 });
+      }
+
+      const total = await Product.find(cond).countDocuments();
+      const totalPages = Math.ceil(total / limit);
+
+      response.page = page;
+      response.totalCount = total;
+      response.totalPageNum = totalPages;
+    }
 
     const products = await query.exec();
-    const total = await Product.countDocuments(cond);
-    const totalPages = Math.ceil(total / limit);
 
-    res.status(200).json({
-      products,
-      page: parseInt(page),
-      total,
-      totalPages,
-    });
+    response.products = products;
+
+    res.status(200).json(response);
   } catch (error) {
-    console.error('Error in getProducts:', error);
-    res.status(500).json({ message: error.message });
+    return res.status(400).json({ status: "fail", error: error.message });
   }
 };
+
 
 productController.updateProduct = async (req, res) => {
   try {
