@@ -135,7 +135,7 @@ cartController.deleteCartItem = async (req, res) => {
 
 cartController.updateCartItem = async (req, res) => {
   try {
-    const { cartItemId, newCartItemId, size, qty } = req.body;
+    const { cartItemId, newCartItemId, size, qty } = req.body; // 요청 데이터에서 필요한 필드만 사용
     const { userId } = req;
 
     const cart = await Cart.findOne({ userId });
@@ -146,10 +146,10 @@ cartController.updateCartItem = async (req, res) => {
       return res.status(404).json({ message: 'Cart item not found.' });
     }
 
-    // 새 옵션/수량 및 cartItemId 업데이트
-    item.size = size;
-    item.qty = qty;
-    item.cartItemId = newCartItemId;
+    // 요청 데이터에 따라 업데이트
+    if (size) item.size = size; // 옵션 변경
+    if (qty) item.qty = qty; // 수량 변경
+    if (newCartItemId) item.cartItemId = newCartItemId; // cartItemId 변경
 
     await cart.save();
 
@@ -158,5 +158,6 @@ cartController.updateCartItem = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 module.exports = cartController;
