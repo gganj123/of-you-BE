@@ -44,8 +44,15 @@ productController.getProducts = async (req, res) => {
   try {
     const { mainCate, subCate, subCate2 } = req.params;
     const { page, name, limit, sort } = req.query;
-
+    const decodedMainCate = mainCate ? decodeURIComponent(mainCate) : null;
+    const decodedSubCate = subCate ? decodeURIComponent(subCate) : null;
+    const decodedSubCate2 = subCate2 ? decodeURIComponent(subCate2) : null;
     const cond = {};
+    if (decodedMainCate) {
+      cond.category = { $all: [decodedMainCate] };
+      if (decodedSubCate) cond.category.$all.push(decodedSubCate);
+      if (decodedSubCate2) cond.category.$all.push(decodedSubCate2);
+    }
 
     if (name) {
       // 띄어쓰기로 단어를 분리하고 빈 문자열 제거
@@ -145,13 +152,9 @@ productController.updateProduct = async (req, res) => {
       stock,
       brand,
       salePrice,
+      realPrice,
+      saleRate,
     } = req.body;
-
-    let saleRate = 0;
-
-    if (salePrice) {
-      saleRate = Number(((price - salePrice) / price) * 100).toFixed(1);
-    }
 
     const product = await Product.findByIdAndUpdate(
       {
@@ -167,6 +170,7 @@ productController.updateProduct = async (req, res) => {
         stock,
         brand,
         salePrice,
+        realPrice,
         saleRate,
       },
       {

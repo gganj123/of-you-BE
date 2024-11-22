@@ -6,7 +6,16 @@ const AddressSchema = new mongoose.Schema(
     city: { type: String, required: true },
     zip: { type: String, required: true },
   },
-  { _id: false } // 하위 스키마가 될 현재 스키마에 id개 생성되지 않도록 설정
+  { _id: false }
+);
+
+const ContactSchema = new mongoose.Schema(
+  {
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    contact: { type: String, required: true },
+  },
+  { _id: false }
 );
 
 const AddressListSchema = new mongoose.Schema(
@@ -16,10 +25,9 @@ const AddressListSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    shipto: {
-      type: AddressSchema,
-      required: true,
-    },
+    shipto: { type: AddressSchema, required: true },
+    contact: { type: ContactSchema, required: true },
+    name: { type: String, required: true },
   },
   { timestamps: true }
 );

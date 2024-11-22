@@ -5,9 +5,9 @@ const addressListController = {};
 addressListController.addAddress = async (req, res) => {
   try {
     const { userId } = req;
-    const { shipto } = req.body;
+    const { name, shipto, contact } = req.body;
 
-    const newAddress = new AddressList({ userId, shipto });
+    const newAddress = new AddressList({ userId, name, shipto, contact });
     await newAddress.save();
     return res.status(200).json({ status: "success", data: newAddress });
   } catch (error) {
@@ -62,7 +62,7 @@ addressListController.updateAddress = async (req, res) => {
   try {
     const { userId } = req;
     const { addressId } = req.params;
-    const { shipto } = req.body;
+    const { name, shipto, contact } = req.body;
 
     const existingAddress = await AddressList.findOne({
       _id: addressId,
@@ -78,9 +78,13 @@ addressListController.updateAddress = async (req, res) => {
       { _id: addressId, userId },
       {
         $set: {
+          name,
           "shipto.address": shipto.address,
           "shipto.city": shipto.city,
           "shipto.zip": shipto.zip,
+          "contact.firstName": contact.firstName,
+          "contact.lastName": contact.lastName,
+          "contact.contact": contact.contact,
         },
       },
       { new: true }

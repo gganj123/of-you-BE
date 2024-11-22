@@ -3,88 +3,112 @@ const Cart = require("../models/Cart");
 const cartController = {};
 
 cartController.createCart = async (req, res) => {
-    try {
-        const {userId} = req;
-        const { cartItems } = req.body;
+  try {
+    const { userId } = req;
+    const { cartItems } = req.body;
 
-        let cart = await Cart.findOne({
-            "userId": userId
-        });
+    let cart = await Cart.findOne({ userId });
 
-        if(!cart) {
-            cart = new Cart({userId});
-            await cart.save();
-        }
-        
-        let falseCount = 0;
-        const falseItems = [];
-        const cartList = [];
-
-        cartItems.forEach(async (item) => {
-            const cartItem = cart.items.find(
-                (cartItem) => cartItem.productId.equals(item.productId) && cartItem.size === item.size
-            );
-
-            if(cartItem) {
-                falseCount++;
-                falseItems.push(item.productId);
-            }else{
-                cart.items = [...cart.items, {productId: item.productId, size: item.size, qty: item.qty}];
-                
-                cartList.push(cart);
-            }
-            
-        });
-
-        if(falseCount > 0) {
-            res.status(200).json({
-                status: "fail",
-                message: "Item already exists",
-                falseItems
-            });
-        }else{
-            for (const cart of cartList) {
-                await cart.save();
-            }
-        }
-
-        res.status(200).json({
-            status: "success",
-            cart,
-            cartItemQty: cart.items.length
-        });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message
-        });
+    if (!cart) {
+      cart = new Cart({ userId, items: [] });
     }
-}
+
+    const falseItems = []; 
+    const newItems = []; 
+
+
+    for (const item of cartItems) {
+      const cartItemId = `${item.productId}_${item.size}`;
+
+      const isDuplicate = cart.items.some(
+        (cartItem) => cartItem.cartItemId === cartItemId
+      );
+
+      if (isDuplicate) {
+        falseItems.push(item.productId); 
+      } else {
+        newItems.push({
+          ...item,
+          cartItemId,
+        });
+      }
+    }
+
+    if (falseItems.length > 0) {
+      return res.status(200).json({
+        status: "fail",
+        message: "Some items already exist in the cart.",
+        falseItems,
+      });
+    }
+
+    cart.items.push(...newItems);
+    await cart.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "Cart updated successfully.",
+      cart,
+      cartItemQty: cart.items.length,
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "fail",
+      message: err.message,
+    });
+  }
+};
+
 
 cartController.getCart = async (req, res) => {
     try {
-        const {userId} = req;
+        const { userId } = req;
 
-        // populate = 참조하는 모델의 데이터를 가져오는 것
-        const cart = await Cart.findOne({userId}).populate({
-            path:"items",
-            populate:{
-                path:"productId",
-                model:"Product",
-            }
+        const cart = await Cart.findOne({ userId }).populate({
+            path: "items.productId", // items 안에 있는 productId 참조
+            model: "Product",
         });
+
+        if (!cart) {
+            return res.status(404).json({
+                status: "fail",
+                message: "Cart not found",
+            });
+        }
+
+        const cartItems = cart.items.map((item) => ({
+            productId: {
+                _id: item.productId._id,
+                sku: item.productId.sku,
+                name: item.productId.name,
+                image: item.productId.image,
+                category: item.productId.category,
+                price: item.productId.price,
+                salePrice: item.productId.salePrice,
+                realPrice: item.productId.realPrice,
+                saleRate: item.productId.saleRate,
+                stock: item.productId.stock,
+                brand: item.productId.brand,
+                status: item.productId.status,
+                isDeleted: item.productId.isDeleted,
+                createdAt: item.productId.createdAt,
+            },
+            size: item.size,
+            qty: item.qty,
+            _id: item._id, 
+        }));
 
         res.status(200).json({
             status: "success",
-            data: cart.items
+            data: cartItems,
         });
     } catch (err) {
         res.status(400).json({
             status: "fail",
-            message: err.message
+            message: err.message,
         });
     }
-}
+};
 
 cartController.getCartCount = async (req, res) => {
     try {
@@ -131,28 +155,29 @@ cartController.deleteCartItem = async (req, res) => {
 }
 
 cartController.updateCartItem = async (req, res) => {
-    try {
-        const {userId} = req;
-        const {productId, size, qty} = req.body;
+  try {
+    const { cartItemId, size, qty } = req.body;
+    const { userId } = req;
 
-        const cart = await Cart.findOne({userId});
-        cart.items = cart.items.map(item =>
-            item.productId.equals(productId) ? {...item, qty, size} : item
-        );
-        await cart.save();
+    const cart = await Cart.findOne({ userId });
 
-        res.status(200).json({
-            status: "success",
-            message: "Item updated",
-            cart
-        });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message
-        });
+    const item = cart.items.find((item) => item._id.equals(cartItemId)); 
+
+    if (!item) {
+      return res.status(404).json({ message: 'Cart item not found.' });
     }
 
-}
+    if (size) item.size = size; 
+    if (qty) item.qty = qty;
+
+    await cart.save();
+
+    res.status(200).json({ message: 'Cart item updated.', cart });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+
 
 module.exports = cartController;
