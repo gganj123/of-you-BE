@@ -134,28 +134,29 @@ cartController.deleteCartItem = async (req, res) => {
 }
 
 cartController.updateCartItem = async (req, res) => {
-    try {
-        const {userId} = req;
-        const {productId, size, qty} = req.body;
+  try {
+    const { cartItemId, newCartItemId, size, qty } = req.body;
+    const { userId } = req;
 
-        const cart = await Cart.findOne({userId});
-        cart.items = cart.items.map(item =>
-          item.cartItemId === `${productId}_${size}` ? {...item, qty} : item
-        );
-        await cart.save();
+    const cart = await Cart.findOne({ userId });
 
-        res.status(200).json({
-            status: "success",
-            message: "Item updated",
-            cart
-        });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message
-        });
+    const item = cart.items.find((item) => item.cartItemId === cartItemId);
+
+    if (!item) {
+      return res.status(404).json({ message: 'Cart item not found.' });
     }
 
-}
+    // 새 옵션/수량 및 cartItemId 업데이트
+    item.size = size;
+    item.qty = qty;
+    item.cartItemId = newCartItemId;
+
+    await cart.save();
+
+    res.status(200).json({ message: 'Cart item updated.', cart });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
 
 module.exports = cartController;
