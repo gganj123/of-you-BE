@@ -106,7 +106,12 @@ orderController.getAdminOrders = async (req, res) => {
       : {};
     let response = { status: "success" };
 
-    let query = Order.find(cond);
+    let query = Order.find(cond)
+      .populate({
+        path: "items.productId",
+        model: "Product",
+      })
+      .sort({ createdAt: -1 });
 
     if (page) {
       query = query.skip((page - 1) * limit).limit(limit);
