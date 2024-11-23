@@ -48,9 +48,10 @@ productController.getProducts = async (req, res) => {
     const decodedSubCate = subCate ? decodeURIComponent(subCate) : null;
     const decodedSubCate2 = subCate2 ? decodeURIComponent(subCate2) : null;
     const cond = {};
-   
-    if (decodedMainCate && decodedMainCate !== 'all') {
+    if (decodedMainCate) {
       cond.category = { $all: [decodedMainCate] };
+      if (decodedSubCate) cond.category.$all.push(decodedSubCate);
+      if (decodedSubCate2) cond.category.$all.push(decodedSubCate2);
     }
 
     if (name) {
