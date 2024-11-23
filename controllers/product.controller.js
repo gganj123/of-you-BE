@@ -37,11 +37,13 @@ productController.getProducts = async (req, res) => {
     const decodedSubCate2 = subCate2 ? decodeURIComponent(subCate2) : null;
     const decodedName = name ? decodeURIComponent(name) : null;
     const cond = {};
-    if (decodedMainCate) {
+    
+    if (decodedMainCate && decodedMainCate !== 'all') {
       cond.category = { $all: [decodedMainCate] };
       if (decodedSubCate) cond.category.$all.push(decodedSubCate);
       if (decodedSubCate2) cond.category.$all.push(decodedSubCate2);
     }
+
     if (name) {
       // 띄어쓰기로 단어를 분리하고 빈 문자열 제거
       const keywords = name.split(' ').filter((word) => word.length > 0);
