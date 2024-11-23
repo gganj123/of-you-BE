@@ -51,8 +51,6 @@ productController.getProducts = async (req, res) => {
    
     if (decodedMainCate && decodedMainCate !== 'all') {
       cond.category = { $all: [decodedMainCate] };
-      if (decodedSubCate) cond.category.$all.push(decodedSubCate);
-      if (decodedSubCate2) cond.category.$all.push(decodedSubCate2);
     }
 
     if (name) {
