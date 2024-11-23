@@ -1,10 +1,22 @@
-const Product = require('../models/Product');
+const Product = require("../models/Product");
 
 const productController = {};
 
 productController.createProduct = async (req, res) => {
   try {
-    const { sku, name, image, category, description, price, stock, brand, salePrice, realPrice, saleRate } = req.body;
+    const {
+      sku,
+      name,
+      image,
+      category,
+      description,
+      price,
+      stock,
+      brand,
+      salePrice,
+      realPrice,
+      saleRate,
+    } = req.body;
 
     const newProduct = new Product({
       sku,
@@ -22,9 +34,9 @@ productController.createProduct = async (req, res) => {
 
     await newProduct.save();
 
-    return res.status(200).json({ status: 'success', data: newProduct });
+    return res.status(200).json({ status: "success", data: newProduct });
   } catch (error) {
-    return res.status(400).json({ status: 'fail', error: error.message });
+    return res.status(400).json({ status: "fail", error: error.message });
   }
 };
 
@@ -41,9 +53,10 @@ productController.getProducts = async (req, res) => {
       if (decodedSubCate) cond.category.$all.push(decodedSubCate);
       if (decodedSubCate2) cond.category.$all.push(decodedSubCate2);
     }
+
     if (name) {
       // 띄어쓰기로 단어를 분리하고 빈 문자열 제거
-      const keywords = name.split(' ').filter((word) => word.length > 0);
+      const keywords = name.split(" ").filter((word) => word.length > 0);
 
       if (keywords.length > 1) {
         // 여러 단어가 있는 경우 AND 검색
@@ -51,14 +64,14 @@ productController.getProducts = async (req, res) => {
           let searchTerms = [keyword];
 
           // 남성/남자, 여성/여자 동의어 처리
-          if (keyword === '남자') searchTerms.push('남성');
-          if (keyword === '여자') searchTerms.push('여성');
-          if (keyword === '바지') searchTerms.push('팬츠');
+          if (keyword === "남자") searchTerms.push("남성");
+          if (keyword === "여자") searchTerms.push("여성");
+          if (keyword === "바지") searchTerms.push("팬츠");
 
           return {
             $or: searchTerms.flatMap((term) => [
-              { name: { $regex: term, $options: 'i' } },
-              { category: { $regex: term, $options: 'i' } },
+              { name: { $regex: term, $options: "i" } },
+              { category: { $regex: term, $options: "i" } },
             ]),
           };
         });
@@ -67,13 +80,13 @@ productController.getProducts = async (req, res) => {
         let searchTerms = [keywords[0]];
 
         // 남성/남자, 여성/여자 동의어 처리
-        if (keywords[0] === '남자') searchTerms.push('남성');
-        if (keywords[0] === '여자') searchTerms.push('여성');
-        if (keywords[0] === '바지') searchTerms.push('팬츠');
+        if (keywords[0] === "남자") searchTerms.push("남성");
+        if (keywords[0] === "여자") searchTerms.push("여성");
+        if (keywords[0] === "바지") searchTerms.push("팬츠");
 
         cond.$or = searchTerms.flatMap((term) => [
-          { name: { $regex: term, $options: 'i' } },
-          { category: { $regex: term, $options: 'i' } },
+          { name: { $regex: term, $options: "i" } },
+          { category: { $regex: term, $options: "i" } },
         ]);
       }
     }
@@ -89,22 +102,22 @@ productController.getProducts = async (req, res) => {
     }
 
     let query = Product.find(cond);
-    let response = { status: 'ok' };
+    let response = { status: "ok" };
 
     if (page) {
       query = query.skip((page - 1) * limit).limit(limit);
 
-      if (sort === 'highPrice') {
+      if (sort === "highPrice") {
         query = query.sort({ realPrice: -1 });
-      } else if (sort === 'lowPrice') {
+      } else if (sort === "lowPrice") {
         query = query.sort({ realPrice: 1 });
-      } else if (sort === 'highSale') {
+      } else if (sort === "highSale") {
         query = query.sort({ saleRate: -1 });
-      } else if (sort === 'lowSale') {
+      } else if (sort === "lowSale") {
         query = query.sort({ saleRate: 1 });
-      } else if (sort === 'latest') {
+      } else if (sort === "latest") {
         query = query.sort({ createdAt: -1 });
-      } else if (sort === 'oldest') {
+      } else if (sort === "oldest") {
         query = query.sort({ createdAt: 1 });
       }
 
@@ -122,14 +135,26 @@ productController.getProducts = async (req, res) => {
 
     res.status(200).json(response);
   } catch (error) {
-    return res.status(400).json({ status: 'fail', error: error.message });
+    return res.status(400).json({ status: "fail", error: error.message });
   }
 };
 
 productController.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { sku, name, image, category, description, price, stock, brand, salePrice, realPrice, saleRate } = req.body;
+    const {
+      sku,
+      name,
+      image,
+      category,
+      description,
+      price,
+      stock,
+      brand,
+      salePrice,
+      realPrice,
+      saleRate,
+    } = req.body;
 
     const product = await Product.findByIdAndUpdate(
       {
@@ -154,12 +179,12 @@ productController.updateProduct = async (req, res) => {
     );
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
       product,
     });
   } catch (err) {
     res.status(400).json({
-      status: 'fail',
+      status: "fail",
       message: err.message,
     });
   }
@@ -172,11 +197,11 @@ productController.deleteProduct = async (req, res) => {
     await Product.findByIdAndDelete(id);
 
     res.status(200).json({
-      status: 'ok',
+      status: "ok",
     });
   } catch (err) {
     res.status(400).json({
-      status: 'fail',
+      status: "fail",
       message: err.message,
     });
   }
@@ -189,12 +214,12 @@ productController.getProductById = async (req, res) => {
     const product = await Product.findById(id);
 
     res.status(200).json({
-      status: 'ok',
+      status: "ok",
       product,
     });
   } catch (err) {
     res.status(400).json({
-      status: 'fail',
+      status: "fail",
       message: err.message,
     });
   }
