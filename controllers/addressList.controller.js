@@ -105,4 +105,36 @@ addressListController.updateAddress = async (req, res) => {
   }
 };
 
+addressListController.setDefaultAddress = async (req, res) => {
+  try {
+    const { userId } = req;
+    const { addressId } = req.params;
+
+    // 먼저 모든 주소의 isDefault를 false로 설정
+    await AddressList.updateMany({ userId }, { $set: { isDefault: false } });
+
+    // 선택한 주소를 기본 배송지로 설정
+    const updatedAddress = await AddressList.findOneAndUpdate(
+      { _id: addressId, userId },
+      { $set: { isDefault: true } },
+      { new: true }
+    );
+
+    if (updatedAddress) {
+      return res.status(200).json({
+        status: "success",
+        message: "Default address set successfully.",
+        data: updatedAddress,
+      });
+    } else {
+      return res.status(404).json({
+        status: "fail",
+        message: "Address not found.",
+      });
+    }
+  } catch (error) {
+    return res.status(400).json({ status: "fail", error: error.message });
+  }
+};
+
 module.exports = addressListController;
