@@ -40,7 +40,7 @@ userController.getUser = async (req, res) => {
 
 userController.deleteUser = async (req, res) => {
   try {
-    const { id } = req.params;
+     const { userId } = req;
 
     const user = await User.findByIdAndDelete(id);
     if (!user) {
