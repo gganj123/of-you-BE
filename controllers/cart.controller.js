@@ -13,9 +13,8 @@ cartController.createCart = async (req, res) => {
       cart = new Cart({ userId, items: [] });
     }
 
-    const falseItems = []; 
-    const newItems = []; 
-
+    const falseItems = [];
+    const newItems = [];
 
     for (const item of cartItems) {
       const cartItemId = `${item.productId}_${item.size}`;
@@ -25,7 +24,7 @@ cartController.createCart = async (req, res) => {
       );
 
       if (isDuplicate) {
-        falseItems.push(item.productId); 
+        falseItems.push(item.productId);
       } else {
         newItems.push({
           ...item,
@@ -59,100 +58,99 @@ cartController.createCart = async (req, res) => {
   }
 };
 
-
 cartController.getCart = async (req, res) => {
-    try {
-        const { userId } = req;
+  try {
+    const { userId } = req;
 
-        const cart = await Cart.findOne({ userId }).populate({
-            path: "items.productId", // items 안에 있는 productId 참조
-            model: "Product",
-        });
+    const cart = await Cart.findOne({ userId }).populate({
+      path: "items.productId", // items 안에 있는 productId 참조
+      model: "Product",
+    });
 
-        if (!cart) {
-            return res.status(404).json({
-                status: "fail",
-                message: "Cart not found",
-            });
-        }
-
-        const cartItems = cart.items.map((item) => ({
-            productId: {
-                _id: item.productId._id,
-                sku: item.productId.sku,
-                name: item.productId.name,
-                image: item.productId.image,
-                category: item.productId.category,
-                price: item.productId.price,
-                salePrice: item.productId.salePrice,
-                realPrice: item.productId.realPrice,
-                saleRate: item.productId.saleRate,
-                stock: item.productId.stock,
-                brand: item.productId.brand,
-                status: item.productId.status,
-                isDeleted: item.productId.isDeleted,
-                createdAt: item.productId.createdAt,
-            },
-            size: item.size,
-            qty: item.qty,
-            _id: item._id, 
-        }));
-
-        res.status(200).json({
-            status: "success",
-            data: cartItems,
-        });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message,
-        });
+    if (!cart) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Cart not found",
+      });
     }
+
+    const cartItems = cart.items.map((item) => ({
+      productId: {
+        _id: item.productId._id,
+        sku: item.productId.sku,
+        name: item.productId.name,
+        image: item.productId.image,
+        category: item.productId.category,
+        price: item.productId.price,
+        salePrice: item.productId.salePrice,
+        realPrice: item.productId.realPrice,
+        saleRate: item.productId.saleRate,
+        stock: item.productId.stock,
+        brand: item.productId.brand,
+        status: item.productId.status,
+        isDeleted: item.productId.isDeleted,
+        createdAt: item.productId.createdAt,
+      },
+      size: item.size,
+      qty: item.qty,
+      _id: item._id,
+    }));
+
+    res.status(200).json({
+      status: "success",
+      data: cartItems,
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "fail",
+      message: err.message,
+    });
+  }
 };
 
 cartController.getCartCount = async (req, res) => {
-    try {
-        const {userId} = req;
-        const cart = await Cart.findOne({userId});
-        if(cart) {
-            res.status(200).json({
-                status: "success",
-                count: cart.items.length
-            });
-        } else {
-            res.status(200).json({
-                status: "success",
-                count: 0
-            });
-        }
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message
-        });
+  try {
+    const { userId } = req;
+    const cart = await Cart.findOne({ userId });
+    if (cart) {
+      res.status(200).json({
+        status: "success",
+        count: cart.items.length,
+      });
+    } else {
+      res.status(200).json({
+        status: "success",
+        count: 0,
+      });
     }
-}
+  } catch (err) {
+    res.status(400).json({
+      status: "fail",
+      message: err.message,
+    });
+  }
+};
 
 cartController.deleteCartItem = async (req, res) => {
-    try {
-        const {itemId} = req.params;
-        const {userId} = req;
+  try {
+    const { itemId } = req.params;
+    const { userId } = req;
 
-        const cart = await Cart.findOne({userId});
-        cart.items = cart.items.filter(item => !item._id.equals(itemId));
-        await cart.save();
+    const cart = await Cart.findOne({ userId });
+    cart.items = cart.items.filter((item) => !item._id.equals(itemId));
+    await cart.save();
 
-        res.status(200).json({
-            status: "success",
-            message: "Item deleted"
-        });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message
-        });
-    }
-}
+    res.status(200).json({
+      status: "success",
+      message: "Item deleted",
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "fail",
+      message: err.message,
+    });
+  }
+};
 
 cartController.updateCartItem = async (req, res) => {
   try {
@@ -161,23 +159,21 @@ cartController.updateCartItem = async (req, res) => {
 
     const cart = await Cart.findOne({ userId });
 
-    const item = cart.items.find((item) => item._id.equals(cartItemId)); 
+    const item = cart.items.find((item) => item._id.equals(cartItemId));
 
     if (!item) {
-      return res.status(404).json({ message: 'Cart item not found.' });
+      return res.status(404).json({ message: "Cart item not found." });
     }
 
-    if (size) item.size = size; 
+    if (size) item.size = size;
     if (qty) item.qty = qty;
 
     await cart.save();
 
-    res.status(200).json({ message: 'Cart item updated.', cart });
+    res.status(200).json({ message: "Cart item updated.", cart });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
-
-
 
 module.exports = cartController;

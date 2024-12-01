@@ -225,6 +225,7 @@ productController.getProductById = async (req, res) => {
   }
 };
 
+// cartId로 구분 추가
 productController.checkStock = async (item) => {
   const product = await Product.findById(item.productId);
   if (product.stock[item.size] < item.qty) {

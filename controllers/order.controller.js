@@ -1,5 +1,6 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const Cart = require("../models/Cart");
 const productController = require("./product.controller");
 const { randomStringGenerator } = require("../utils/randomStringGenerator");
 
@@ -31,6 +32,16 @@ orderController.createOrder = async (req, res) => {
       orderNum: randomStringGenerator(),
     });
     await order.save();
+
+    const cart = await Cart.findOne({ userId });
+
+    cart.items = cart.items.filter((cartItem) => {
+      return !orderList.some(
+        (orderItem) => cartItem._id.toString() === orderItem.cartId.toString()
+      );
+    });
+
+    await cart.save();
 
     res.status(200).json({
       status: "success",
